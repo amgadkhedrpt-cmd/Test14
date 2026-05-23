@@ -4,163 +4,241 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BodyFix — Ultimate Payroll & Clinic Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
-  :root {
-    --bg: #0E1117; --card: #161B25; --border: #2A3347;
-    --acc: #3B82F6; --grn: #10B981; --red: #EF4444; --tx: #E8EDF5; --tx2: #8899AA;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'IBM Plex Sans Arabic', sans-serif; background: var(--bg); color: var(--tx); direction: rtl; padding: 15px; min-height: 100vh; }
-  
-  .container { max-width: 1100px; margin: 0 auto; }
-  .header { padding: 15px 0; border-bottom: 1px solid var(--border); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-  .logo { font-size: 24px; font-weight: 800; color: #ec4899; }
-  .logo span { color: #00b4d8; }
-  .title-sub { font-size: 12px; color: var(--tx2); margin-top: 2px; }
-  
-  .upload-section { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
-  .upload-grid { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
-  
-  /* صناديق الرفع الانسيابية والمحمية للموبايل */
-  .uz-box { background: var(--bg); border: 2px dashed var(--border); border-radius: 9px; padding: 15px; text-align: center; position: relative; transition: 0.2s; }
-  .uz-box input[type="file"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 99; }
-  .uz-title { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 4px; }
-  .uz-desc { font-size: 11px; color: var(--tx2); }
-  
-  .run-btn { width: 100%; padding: 14px; background: var(--acc); color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; transition: 0.2s; }
-  .run-btn:disabled { background: var(--border); color: var(--tx2); cursor: not-allowed; }
-  
-  .err-box { background: rgba(239, 68, 68, 0.12); border-right: 4px solid var(--red); padding: 12px; border-radius: 6px; color: #FCA5A5; font-size: 13px; margin-top: 15px; display: none; window-break: break-all; }
-  
-  .tabs { display: flex; gap: 8px; margin: 25px 0 15px; border-bottom: 1px solid var(--border); padding-bottom: 8px; overflow-x: auto; }
-  .tab-btn { padding: 8px 16px; background: transparent; border: none; color: var(--tx2); font-weight: 600; font-size: 13px; cursor: pointer; white-space: nowrap; }
-  .tab-btn.active { background: var(--border); color: #fff; border-radius: 6px; }
-  
-  .tab-content { display: none; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 25px; }
-  .tab-content.active { display: block; }
-  
-  .table-wrapper { width: 100%; overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; text-align: right; font-size: 13px; }
-  th { padding: 12px; background: #0d131f; color: #fff; font-weight: 600; border-bottom: 1px solid var(--border); white-space: nowrap; }
-  td { padding: 10px 12px; border-bottom: 1px solid rgba(42,51,71,0.5); white-space: nowrap; color: var(--tx); }
-  tr:hover td { background: rgba(255,255,255,0.02); }
-  
-  .td-neg { color: var(--red); }.td-pos { color: var(--grn); }.td-acc { color: var(--acc); font-weight: bold; }
-  .xl-btn { background: #ec4899; color: #fff; padding: 10px 20px; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; }
-  .badge-match { background: rgba(16, 185, 129, 0.15); color: var(--grn); padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+:root{
+  --bg:#0E1117;--sf:#161B25;--sf2:#1E2535;--bd:#2A3347;
+  --acc:#3B82F6;--grn:#10B981;--amb:#F59E0B;--red:#EF4444;--pur:#8B5CF6;--teal:#34D399;
+  --tx:#E8EDF5;--tx2:#8899AA;--tx3:#4A5568;
+  --font:'IBM Plex Sans Arabic',sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--tx);direction:rtl}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--sf)}
+::-webkit-scrollbar-thumb{background:var(--bd);border-radius:4px}
+
+/* Shell Layout */
+.shell{display:grid;grid-template-rows:52px 1fr;height:100vh;overflow:hidden}
+.topbar{background:var(--sf);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 20px;gap:14px;height:52px;flex-shrink:0}
+.logo{font-size:13px;font-weight:700;letter-spacing:.1em;color:var(--acc);text-transform:uppercase;font-family:var(--mono)}
+.logo span{color:var(--tx3)}
+.topbar-mid{font-size:11px;color:var(--tx3);font-family:var(--mono)}
+.topbar-right{margin-right:auto;display:flex;gap:8px;align-items:center}
+.tbtn{background:transparent;border:1px solid var(--bd);border-radius:7px;color:var(--tx2);font-family:var(--font);font-size:12px;padding:5px 13px;cursor:pointer;transition:.15s}
+.tbtn:hover{border-color:var(--acc);color:var(--acc)}
+.tbtn.primary{background:var(--acc);border-color:var(--acc);color:#fff}
+.tbtn.primary:hover{background:#2563EB}
+
+.main{display:grid;grid-template-columns:260px 1fr;overflow:hidden}
+
+/* Sidebar */
+.sidebar{background:var(--sf);border-left:1px solid var(--bd);overflow-y:auto;display:flex;flex-direction:column}
+.sb-sec{padding:16px;border-bottom:1px solid var(--bd)}
+.sb-lbl{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);font-family:var(--mono);margin-bottom:10px}
+
+.upload-grid { display: flex; flex-direction: column; gap: 2px; }
+
+/* صناديق الرفع الانسيابية والمحمية تماماً للمس الموبايل */
+.uz{border:1px dashed var(--bd);border-radius:9px;padding:12px 10px;cursor:pointer;transition:.18s;text-align:center;position:relative;margin-bottom:7px;background:transparent}
+.uz:hover{border-color:var(--acc);background:rgba(59,130,246,.04)}
+.uz.done{border-color:var(--grn);border-style:solid;background:rgba(16,185,129,.04)}
+.uz input[type="file"]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:99}
+.uz-icon{font-size:16px;margin-bottom:2px}
+.uz-name{font-size:11px;font-weight:500;color:var(--tx2)}
+.uz.done .uz-name{color:var(--grn);font-weight:600}
+.uz-file{font-size:10px;color:var(--tx3);font-family:var(--mono);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.run-btn{width:100%;padding:11px;border-radius:9px;border:none;background:var(--acc);color:#fff;font-family:var(--font);font-weight:600;font-size:13px;cursor:pointer;transition:.18s;display:flex;align-items:center;justify-content:center;gap:7px;margin-top:4px}
+.run-btn:hover:not(:disabled){background:#2563EB}
+.run-btn:disabled{background:var(--bd);color:var(--tx3);cursor:not-allowed}
+.err{background:rgba(239, 68, 68, 0.12);border:1px solid rgba(239,68,68,.25);border-radius:7px;padding:12px;font-size:12px;color:#FCA5A5;line-height:1.6;margin-top:8px;white-space:pre-line}
+
+.nav{display:flex;flex-direction:column}
+.ni{display:flex;align-items:center;gap:9px;padding:10px 16px;cursor:pointer;transition:.12s;font-size:13px;color:var(--tx2);border-right:2px solid transparent}
+.ni:hover{background:rgba(255,255,255,.02);color:var(--tx)}
+.ni.on{background:rgba(59,130,246,.08);color:var(--acc);border-right-color:var(--acc)}
+.ni-ic{font-size:14px;width:18px;text-align:center}
+
+/* Content Window */
+.content{overflow-y:auto;padding:24px}
+.pg{display:none}.pg.on{display:block}
+
+/* KPIs & Tables Row Styling */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:12px;margin-bottom:24px}
+.kpi{background:var(--sf);border:1px solid var(--bd);border-radius:13px;padding:18px 20px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;right:0;left:0;height:2px;background:var(--c,var(--acc))}
+.kv{font-size:22px;font-weight:700;font-family:var(--mono);color:var(--tx);margin-bottom:3px}
+.kl{font-size:12px;color:var(--tx2)}
+
+.tcard{background:var(--sf);border:1px solid var(--bd);border-radius:13px;overflow:hidden;margin-bottom:20px}
+.thead-row{display:flex;align-items:center;padding:13px 18px;border-bottom:1px solid var(--bd);gap:10px;flex-wrap:wrap}
+.thead-title{font-size:14px;font-weight:600}
+.tw{overflow-x:auto}
+table { width: 100%; border-collapse: collapse; text-align: right; font-size: 13px; }
+th{padding:10px 13px;text-align:right;font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--tx3);font-family:var(--mono);background:var(--sf);white-space:nowrap;border-bottom:1px solid var(--bd)}
+td{padding:9px 13px;font-size:12px;color:var(--tx);border-bottom:1px solid rgba(42,51,71,.45);white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:rgba(255,255,255,.02);cursor:pointer}
+.td-name{font-weight:500;color:var(--tx)}
+.td-m{font-family:var(--mono);font-size:12px}
+.td-pos{color:var(--grn)!important}.td-neg{color:var(--red)!important}.td-acc{color:var(--acc)!important;font-weight:600}
+.badge-match { background: rgba(16, 185, 129, 0.15); color: var(--grn); padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+
+.progress-container { width: 70px; background: var(--bd); border-radius: 4px; display: inline-block; margin-left: 5px; overflow: hidden; height: 6px; vertical-align: middle; }
+.progress-bar { height: 100%; background: linear-gradient(90deg, #ec4899, #00b4d8); width: 0%; }
+
+/* Responsive Media Query Layout for Mobile/Folds */
+@media (max-width: 1024px) {
+  .shell { display: block; height: auto; min-height: 100vh; overflow: visible; }
+  .topbar { position: sticky; top: 0; z-index: 100; height: 52px; }
+  .main { display: block; overflow: visible; }
+  .sidebar { width: 100%; border-left: none; border-bottom: 1px solid var(--bd); overflow: visible; }
+  .upload-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; padding: 5px 0; }
+  .content { overflow: visible; padding: 15px; }
+}
 </style>
 </head>
 <body>
+<div class="shell">
 
-<div class="container">
-  <div class="header">
-    <div>
-      <div class="logo">BODY<span>FIX</span></div>
-      <div class="title-sub" id="periodLbl">لوحة التحكم والربط للأتمتة الإدارية والمالية للفرعين</div>
-    </div>
-    <div id="exportArea" style="display:none;">
-      <button class="xl-btn" onclick="exportExcel()">📥 تحميل تقرير إكسل النهائي الشامل</button>
+  <div class="topbar">
+    <div class="logo">BodyFix <span>/ Payroll</span></div>
+    <div class="topbar-mid" id="periodLbl">— ارفع الـ 6 ملفات للبدء</div>
+    <div class="topbar-right">
+      <button class="tbtn primary" onclick="exportExcel()">⬇ تصدير إكسل الشامل</button>
     </div>
   </div>
 
-  <div class="upload-section">
-    <div class="sb-lbl" style="font-size:11px; color:var(--tx2); margin-bottom:10px; font-weight:600;">ارفع الملفات المطلوبة للبدء:</div>
-    <div class="upload-grid">
-      
-      <div class="uz-box" id="box-emp">
-        <div class="uz-title">👥 1. كشف الموظفين والرواتب *</div>
-        <div class="uz-desc" id="lbl-emp">اضغط هنا للاختيار (الملف المحتوي علي خانة UT أيام)</div>
-        <input type="file" accept=".xlsx,.xls" onchange="fileSelected(this, 'emp')">
-      </div>
-      
-      <div class="uz-box" id="box-att">
-        <div class="uz-title">⏱ 2. ملف البصمة الخام *</div>
-        <div class="uz-desc" id="lbl-att">اضغط هنا للاختيار (سجل حركات الحضور والانصراف)</div>
-        <input type="file" accept=".xlsx,.xls" onchange="fileSelected(this, 'att')">
-      </div>
-      
-      <div class="uz-box" id="box-appts">
-        <div class="uz-title">📅 3. ملف المواعيد *</div>
-        <div class="uz-desc" id="lbl-appts">اضغط هنا للاختيار (Appointments لحساب الـ Sec02 وإنتاجية الأطباء)</div>
-        <input type="file" accept=".xlsx,.xls" multiple onchange="fileSelected(this, 'appts')">
-      </div>
-      
-      <div class="uz-box" id="box-ops">
-        <div class="uz-title">🚀 4. ملف العمليات *</div>
-        <div class="uz-desc" id="lbl-ops">اضغط هنا للاختيار (Ops Steps لتحديد المستهدف للتحليل)</div>
-        <input type="file" accept=".xlsx,.xls" multiple onchange="fileSelected(this, 'ops')">
-      </div>
-      
-      <div class="uz-box" id="box-enc">
-        <div class="uz-title">✅ 5. ملف المنجز الفعلي *</div>
-        <div class="uz-desc" id="lbl-enc">اضغط هنا للاختيار (Encounters الزيارات المغلقة والمحققة)</div>
-        <input type="file" accept=".xlsx,.xls" onchange="fileSelected(this, 'enc')">
-      </div>
-      
-      <div class="uz-box" id="box-doc">
-        <div class="uz-title">❌ 6. ملف أخطاء الكومبليت</div>
-        <div class="uz-desc" id="lbl-doc">اضغط هنا للاختيار (تقرير النواقص - اختياري)</div>
-        <input type="file" accept=".xlsx,.xls" onchange="fileSelected(this, 'doc')">
-      </div>
-      
-    </div>
+  <div class="main">
+    <div class="sidebar">
+      <div class="sb-sec">
+        <div class="sb-lbl">الملفات المطلوبة (ربط كامل)</div>
+        
+        <div class="upload-grid">
+          <div class="uz" id="uz-emp">
+            <div class="uz-icon" id="ui-emp">👥</div>
+            <div class="uz-name">1. كشف الموظفين والرواتب *</div>
+            <div class="uz-file" id="uf-emp">اضغط للاختيار</div>
+            <input type="file" accept=".xlsx,.xls" onchange="sf(this,'emp')">
+          </div>
 
-    <button class="run-btn" id="runBtn" onclick="runProcess()" disabled>معالجة وتحليل كافة البيانات ربط كامل 🚀</button>
-    <div class="err-box" id="errBox"></div>
-  </div>
+          <div class="uz" id="uz-att">
+            <div class="uz-icon" id="ui-att">⏱</div>
+            <div class="uz-name">2. ملف البصمة الخام *</div>
+            <div class="uz-file" id="uf-att">اضغط للاختيار</div>
+            <input type="file" accept=".xlsx,.xls" onchange="sf(this,'att')">
+          </div>
 
-  <div id="resultView" style="display:none;">
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab(event, 'view-payroll')">💰 كشف الرواتب والماليات</button>
-      <button class="tab-btn" onclick="switchTab(event, 'view-sessions')">🏥 تفاصيل إنتاجية الأطباء</button>
-      <button class="tab-btn" onclick="switchTab(event, 'view-analyzer')">🎯 نسبة الإنجاز (Ops vs Enc)</button>
-      <button class="tab-btn" onclick="switchTab(event, 'view-attendance')">🔍 تدقيق غيابات الـ UT</button>
-    </div>
+          <div class="uz" id="uz-appts">
+            <div class="uz-icon" id="ui-appts">📅</div>
+            <div class="uz-name">3. ملف المواعيد *</div>
+            <div class="uz-file" id="uf-appts">اضغط للاختيار</div>
+            <input type="file" accept=".xlsx,.xls" multiple onchange="sf(this,'appts')">
+          </div>
 
-    <div class="tab-content active" id="view-payroll">
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr><th>الاسم</th><th>الوظيفة</th><th>الفرع</th><th>الأساسي</th><th>الحضور</th><th>التأخير (د)</th><th>الأوفر تايم (د)</th><th>Sec02 الفرع</th><th>صافي المستحق</th></tr>
-          </thead>
-          <tbody id="tbl-payroll"></tbody>
-        </table>
+          <div class="uz" id="uz-ops">
+            <div class="uz-icon" id="ui-ops">🚀</div>
+            <div class="uz-name">4. ملف العمليات *</div>
+            <div class="uz-file" id="uf-ops">اضغط للاختيار</div>
+            <input type="file" accept=".xlsx,.xls" multiple onchange="sf(this,'ops')">
+          </div>
+
+          <div class="uz" id="uz-enc">
+            <div class="uz-icon" id="ui-enc">✅</div>
+            <div class="uz-name">5. ملف المنجز الفعلي *</div>
+            <div class="uz-file" id="uf-enc">اضغط للاختيار</div>
+            <input type="file" accept=".xlsx,.xls" onchange="sf(this,'enc')">
+          </div>
+
+          <div class="uz" id="uz-doc">
+            <div class="uz-icon" id="ui-doc">❌</div>
+            <div class="uz-name">6. أخطاء الكومبليت</div>
+            <div class="uz-file" id="uf-doc">اضغط للاختيار (اختياري)</div>
+            <input type="file" accept=".xlsx,.xls" onchange="sf(this,'doc')">
+          </div>
+        </div>
+
+        <button class="run-btn" id="runBtn" onclick="runProcess()" disabled>معالجة وتحليل الداتا ربط كامل 🚀</button>
+        <div id="errBox" class="err hidden"></div>
       </div>
-    </div>
 
-    <div class="tab-content" id="view-sessions">
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr><th>اسم الدكتور</th><th>كشف ع ط</th><th>جلسة ع ط</th><th>كشف تغذية</th><th>متابعة تغذية</th><th>جلسات تخسيس</th><th>حجامة</th><th>ريكفري</th><th>تيكار</th><th>أخطاء كومبليت</th><th>إجمالي المستحق</th></tr>
-          </thead>
-          <tbody id="tbl-sessions"></tbody>
-        </table>
+      <div class="sb-sec" style="padding:12px 0;">
+        <div class="nav">
+          <div class="ni on" onclick="goto('overview',this)"><span class="ni-ic">◈</span> نظرة عامة</div>
+          <div class="ni" onclick="goto('employees',this)"><span class="ni-ic">💵</span> كشف الرواتب</div>
+          <div class="ni" onclick="goto('sessions',this)"><span class="ni-ic">📊</span> تفاصيل الجلسات</div>
+          <div class="ni" onclick="goto('analyzer',this)"><span class="ni-ic">🎯</span> نسبة الإنجاز</div>
+          <div class="ni" onclick="goto('attendance',this)"><span class="ni-ic">◷</span> غيابات UT البصمة</div>
+        </div>
       </div>
     </div>
 
-    <div class="tab-content" id="view-analyzer">
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr><th>اسم الدكتور</th><th>المطلوب (Operations)</th><th>المنجز (Encounters)</th><th>المتبقي (الفارق)</th><th>نسبة الإنجاز الكلية</th></tr>
-          </thead>
-          <tbody id="tbl-analyzer"></tbody>
-        </table>
+    <div class="content">
+      <div id="emptyMsg" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:14px;color:var(--tx3)">
+        <div style="font-size:48px;opacity:.2">📂</div>
+        <div style="font-size:14px">يرجى رفع الـ 5 ملفات الأساسية لتفعيل لوحة التحكم والتحليل المدمج</div>
       </div>
-    </div>
 
-    <div class="tab-content" id="view-attendance">
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr><th>الموظف</th><th>UT ملفك اليدوي</th><th>غيابات البصمة</th><th>الفارق</th><th>حالة التطابق</th><th>ملاحظة نظام التدقيق</th></tr>
-          </thead>
-          <tbody id="tbl-attendance"></tbody>
-        </table>
+      <div class="pg" id="pg-overview">
+        <div class="kpi-row" id="kpiRow"></div>
       </div>
+
+      <div class="pg" id="pg-employees">
+        <div class="tcard">
+          <div class="thead-row"><span class="thead-title">💰 كشف الرواتب والماليات النهائي للفرعين</span></div>
+          <div class="tw">
+            <table>
+              <thead><tr>
+                <th>الاسم</th><th>الوظيفة</th><th>الفرع</th><th>الأساسي</th><th>الحضور</th><th>التأخير (د)</th><th>الأوفر تايم (د)</th><th>Sec02 السكرتارية</th><th>صافي المستحق</th>
+              </tr></thead>
+              <tbody id="payrollTb"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="pg" id="pg-sessions">
+        <div class="tcard">
+          <div class="thead-row"><span class="thead-title">📊 تفاصيل إنتاجية العيادة وجلسات الطبيب تفصيلياً</span></div>
+          <div class="tw">
+            <table>
+              <thead><tr>
+                <th>اسم الدكتور</th><th>كشف ع ط</th><th>جلسة ع ط</th><th>كشف تغذية</th><th>متابعة تغذية</th><th>جلسات تخسيس</th><th>حجامة</th><th>ريكفري</th><th>تيكار</th><th>أخطاء كومبليت</th><th>إجمالي المستحق</th></tr></thead>
+              <tbody id="sessionsTb"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="pg" id="pg-analyzer">
+        <div class="tcard">
+          <div class="thead-row"><span class="thead-title">🎯 خطة العمل ونسبة الإنجاز المحققة (العمليات ضد المنجز)</span></div>
+          <div class="tw">
+            <table>
+              <thead><tr>
+                <th>اسم الدكتور</th><th>المطلوب (Operations)</th><th>المنجز (Encounters)</th><th>المتبقي (الفارق)</th><th>نسبة الإنجاز الكلية</th></tr></thead>
+              <tbody id="analyzerTb"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="pg" id="pg-attendance">
+        <div class="tcard">
+          <div class="thead-row"><span class="thead-title">🔍 تدقيق غيابات الـ UT اليدوية ضد حركات جهاز البصمة</span></div>
+          <div class="tw">
+            <table>
+              <thead><tr>
+                <th>الموظف</th><th>UT ملفك اليدوي</th><th>غيابات البصمة</th><th>الفارق</th><th>حالة التطابق</th><th>ملاحظة نظام التدقيق</th></tr></thead>
+              <tbody id="attTb"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -185,19 +263,30 @@ const FIXED_SCHEDULES = [
 const FILES = {};
 let DATA = [], absenceAnalysis = [];
 
-function fileSelected(input, k) {
+const n = v => { const p = parseFloat(v); return isNaN(p) ? 0 : p; };
+const fmt = v => isNaN(v) || v == null ? '—' : Number(v).toLocaleString('ar-EG', { maximumFractionDigits: 0 }) + ' ج.م';
+
+function sf(input, k) {
   if (!input.files || input.files.length === 0) return;
   if (input.hasAttribute('multiple')) {
-    FILES[k] = Array.from(input.files);
-    document.getElementById('lbl-' + k).innerHTML = "✅ تم اختيار " + input.files.length + " ملفات منجزة";
+      FILES[k] = Array.from(input.files);
+      document.getElementById('uf-' + k).textContent = input.files.length + " ملفات مرفوعة";
   } else {
-    FILES[k] = input.files[0];
-    document.getElementById('lbl-' + k).innerHTML = "✅ تم تحميل: " + input.files[0].name;
+      FILES[k] = input.files[0];
+      document.getElementById('uf-' + k).textContent = input.files[0].name;
   }
-  document.getElementById('box-' + k).style.backgroundColor = "rgba(16, 185, 129, 0.06)";
-  document.getElementById('box-' + k).style.borderColor = "#10B981";
   
-  // تفعيل الزر تلقائياً عند استيفاء الـ 5 ملفات الأساسية
+  document.getElementById('uz-' + k).classList.add('done');
+  document.getElementById('ui-' + k).textContent = '✅';
+  document.getElementById('runBtn').disabled = !(FILES.emp && FILES.att && FILES.appts && FILES.ops && FILES.enc);
+}
+
+function sf_direct(file, k) {
+  if (!file) return;
+  FILES[k] = file;
+  document.getElementById('uz-' + k).classList.add('done');
+  document.getElementById('ui-' + k).textContent = '✅';
+  document.getElementById('uf-' + k).textContent = file.name;
   document.getElementById('runBtn').disabled = !(FILES.emp && FILES.att && FILES.appts && FILES.ops && FILES.enc);
 }
 
@@ -226,9 +315,8 @@ function matchName(rawName, refList) {
 
 async function runProcess() {
   const btn = document.getElementById('runBtn');
-  const errBox = document.getElementById('errBox');
-  btn.disabled = true; btn.innerHTML = 'جاري المعالجة والربط الشامل لكافة الفروع حياً...';
-  errBox.style.display = 'none';
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> جاري الحساب والربط الشامل...';
+  document.getElementById('errBox').classList.add('hidden');
 
   try {
     const staffRows = await readXL(FILES.emp);
@@ -236,24 +324,23 @@ async function runProcess() {
     
     let apptsRows = [];
     if (Array.isArray(FILES.appts)) {
-      for (let f of FILES.appts) { const d = await readXL(f); apptsRows = apptsRows.concat(d); }
+        for (let f of FILES.appts) { const d = await readXL(f); apptsRows = apptsRows.concat(d); }
     } else { apptsRows = await readXL(FILES.appts); }
 
     let opsRows = [];
     if (Array.isArray(FILES.ops)) {
-      for (let f of FILES.ops) { const d = await readXL(f); opsRows = opsRows.concat(d); }
+        for (let f of FILES.ops) { const d = await readXL(f); opsRows = opsRows.concat(d); }
     } else { opsRows = await readXL(FILES.ops); }
 
     const encRows = await readXL(FILES.enc);
 
     if (!staffRows.length) throw new Error('ملف الموظفين فارغ أو غير صحيح.');
 
-    // 1. تأسيس وحفظ الأسماء المرجعية أولاً لمنع مشاكل عدم التعريف
     let refNames = [];
     let staffMetadata = {};
 
     let sKeys = Object.keys(staffRows[0] || {});
-    let nameKey = sKeys.find(k => k.includes('الاسم') || k.toLowerCase().includes('name')) || sKeys[1];
+    let nameKey = sKeys.find(k => k.includes('الاسم') || k.toLowerCase().includes('name') || k.includes('__EMPTY_1')) || sKeys[1];
     let roleKey = sKeys.find(k => k.toLowerCase().includes('role') || k.includes('وظيفة') || k.toLowerCase().includes('job')) || sKeys[2];
     let branchKey = sKeys.find(k => k.includes('الفرع') || k.toLowerCase().includes('branch')) || sKeys[3];
     let basicKey = sKeys.find(k => k.includes('الأساسي') || k.includes('الراتب')) || sKeys[4];
@@ -275,7 +362,6 @@ async function runProcess() {
         };
     });
 
-    // 2. معالجة ملف أخطاء الكومبليت بأمان تام بعد بناء المرجعية للأسماء
     if (FILES.doc) {
         const docRows = await readXL(FILES.doc);
         docRows.forEach(r => {
@@ -283,16 +369,16 @@ async function runProcess() {
             if (keys.length === 0) return;
             let docNameKey = keys.find(k => k.includes('الدكتور') || k.includes('الطبيب') || k.includes('الاسم')) || keys[0];
             let errCountKey = keys.find(k => k.includes('أخطاء') || k.includes('عدد') || k.includes('خطأ')) || keys[1];
+            
             if (r[docNameKey]) {
                 let mDoc = matchName(r[docNameKey], refNames);
                 if (staffMetadata[mDoc]) {
-                  staffMetadata[mDoc].docErrors += (parseFloat(r[errCountKey]) || 1);
+                    staffMetadata[mDoc].docErrors += (n(r[errCountKey]) || 1);
                 }
             }
         });
     }
 
-    // 3. تحليل ملف المواعيد وربط بند السكرتارية (Sec02 للفرع بالكامل)
     let branchTotals = { "الهرم": 0, "الدقي": 0 };
     if (apptsRows.length > 0) {
         let apKeys = Object.keys(apptsRows[0] || {});
@@ -307,234 +393,4 @@ async function runProcess() {
             let currentBranch = bRaw.includes("دقي") || bRaw.toLowerCase().includes("dokki") ? "الدقي" : "الهرم";
 
             let isKashfPt = typeStr.includes("كشف علاج طبيعي");
-            let isPtSession = typeStr.includes("جلسة علاج طبيعي");
-            let isKashfNut = typeStr.includes("كشف تغذية");
-            let isFollowNut = typeStr.includes("متابعة تغذية");
-            let isSlimming = SLIMMING_TYPES.some(st => typeStr.includes(st));
-            let isHegama = typeStr.includes("ج حجامه");
-            let isRecovery = typeStr.includes("ج ريكفري");
-            let isTecar = typeStr.includes("تيكار");
-
-            if (staffMetadata[matchedDoc]) {
-                let p = staffMetadata[matchedDoc].prod;
-                if (isKashfPt) p.kashf_pt++;
-                if (isPtSession) p.pt_session++;
-                if (isKashfNut) p.kashf_nut++;
-                if (isFollowNut) p.follow_nut++;
-                if (isSlimming) p.weight_loss++;
-                if (isHegama) p.hegama++;
-                if (isRecovery) p.recovery++;
-                if (isTecar) p.tecar++;
-                if (isPtSession || isSlimming || isHegama || isRecovery || isTecar) p.total_sessions++;
-            }
-            if (isKashfPt || isPtSession || isKashfNut || isFollowNut || isSlimming || isHegama || isRecovery || isTecar) {
-                branchTotals[currentBranch]++;
-            }
-        });
-    }
-
-    refNames.forEach(n => {
-        let emp = staffMetadata[n];
-        let currentJob = (emp.job || "").toString().toLowerCase();
-        if (["secretary", "سكرتير", "استقبال", "receptionist"].some(r => currentJob.includes(r))) {
-            let b = emp.branch.includes("دقي") ? "الدقي" : "الهرم";
-            emp.sec02 = branchTotals[b] || 0;
-        }
-    });
-
-    if (opsRows.length > 0) {
-        let opKeys = Object.keys(opsRows[0] || {});
-        let opDoc = opKeys.find(k => k.includes('الدكتور') || k.toLowerCase().includes('doctor')) || opKeys[1];
-        let opType = opKeys.find(k => k.includes('الخدمة') || k.toLowerCase().includes('type')) || opKeys[2];
-
-        opsRows.forEach(row => {
-            let matchedDoc = matchName(row[opDoc], refNames);
-            let sVal = (row[opType] || "").toString().trim();
-            let isTarget = TARGET_SERVICES.some(ts => sVal.includes(ts) || ts.includes(sVal));
-            if (isTarget && staffMetadata[matchedDoc]) staffMetadata[matchedDoc].opsCount++;
-        });
-    }
-
-    if (encRows.length > 0) {
-        let encKeys = Object.keys(encRows[0] || {});
-        let encDoc = encKeys.find(k => k.includes('الدكتور') || k.toLowerCase().includes('doctor')) || encKeys[1];
-
-        encRows.forEach(row => {
-            let matchedDoc = matchName(row[encDoc], refNames);
-            if (staffMetadata[matchedDoc]) staffMetadata[matchedDoc].encCount++;
-        });
-    }
-
-    // 4. معالجة حركات البصمة والحضور الفعلي
-    let atKeys = Object.keys(attnRows[0] || {});
-    let uKey = atKeys.find(k => k.includes('الاسم') || k.toLowerCase().includes('user')) || atKeys[0];
-    let cKey = atKeys.find(k => k.includes('حضور') || k.toLowerCase().includes('created')) || atKeys[1];
-    let oKey = atKeys.find(k => k.includes('انصراف') || k.toLowerCase().includes('updated')) || atKeys[2];
-
-    let employeeDatesMap = {}, allUniqueDates = new Set();
-    refNames.forEach(n => employeeDatesMap[n] = new Set());
-
-    attnRows.forEach(row => {
-        let matchedName = matchName(row[uKey], refNames);
-        if (!staffMetadata[matchedName]) return;
-
-        let checkinDt = row[cKey];
-        let checkoutDt = row[oKey];
-
-        if (!(checkinDt instanceof Date) && checkinDt) checkinDt = new Date(checkinDt);
-        if (!(checkoutDt instanceof Date) && checkoutDt) checkoutDt = new Date(checkoutDt);
-
-        if (!checkinDt || isNaN(checkinDt.getTime())) return;
-
-        let dateString = checkinDt.getFullYear() + '-' + String(checkinDt.getMonth() + 1).padStart(2, '0') + '-' + String(checkinDt.getDate()).padStart(2, '0');
-        allUniqueDates.add(dateString);
-        employeeDatesMap[matchedName].add(dateString);
-
-        staffMetadata[matchedName].attendanceCount = employeeDatesMap[matchedName].size;
-
-        let checkinTimeVal = checkinDt.getHours() * 60 + checkinDt.getMinutes();
-        let officialHour = 14, reqHours = 8;
-        
-        let currentJob = (staffMetadata[matchedName].job || "").toString().toLowerCase();
-        let calcOt = !NO_OVERTIME_ROLES.some(r => currentJob.includes(r));
-
-        let fixedSched = FIXED_SCHEDULES.find(fs => fs.keys.some(k => matchedName.toLowerCase().includes(k)));
-        if (fixedSched) {
-            officialHour = parseInt(fixedSched.time.split(':')[0]); reqHours = fixedSched.hours;
-        } else if (currentJob.includes("secretary") || currentJob.includes("سكرتير")) {
-            officialHour = Math.abs(checkinTimeVal - (11 * 60)) < Math.abs(checkinTimeVal - (15 * 60)) ? 11 : 15;
-            reqHours = 8;
-        }
-
-        if (checkinTimeVal > (officialHour * 60)) staffMetadata[matchedName].totalDelay += (checkinTimeVal - (officialHour * 60));
-        if (calcOt && checkoutDt && !isNaN(checkoutDt.getTime())) {
-            let actH = (checkoutDt.getTime() - checkinDt.getTime()) / (1000 * 60 * 60);
-            if (actH > reqHours) staffMetadata[matchedName].totalOT += Math.round((actH - reqHours) * 60);
-        }
-    });
-
-    // 5. تدقيق ومقارنة الغيابات
-    absenceAnalysis = [];
-    let totalExpectedDays = Array.from(allUniqueDates).filter(d => new Date(d).getDay() !== 5).length;
-
-    refNames.forEach(name => {
-        let emp = staffMetadata[name];
-        let compAbs = Math.max(0, totalExpectedDays - employeeDatesMap[name].size);
-        let diff = emp.utDays - compAbs;
-        let status = diff === 0 ? "✅ متطابق" : (diff > 0 ? "🔴 ملفك أكثر" : "🟡 التقرير أكثر");
-        absenceAnalysis.push({
-            name, yourCount: emp.utDays, rptCount: compAbs, diff, status,
-            note: diff > 0 ? `سجلت ${emp.utDays} يدوياً والسيستم لقط ${compAbs}` : (diff < 0 ? `السيستم لقط ${compAbs} وأنت سجلت ${emp.utDays}` : "تطابق كامل")
-        });
-    });
-
-    DATA = refNames.map(n => ({ name: n, ...staffMetadata[n] }));
-    
-    // بناء وعرض الجداول على لوحة التحكم فورا
-    renderDashboardTables();
-
-    document.getElementById('emptyMsg').style.display = 'none';
-    document.getElementById('periodLbl').textContent = `الربط الشامل جاهز — ${DATA.length} موظف`;
-    document.getElementById('resultView').style.display = "block";
-    document.getElementById('exportArea').style.display = "block";
-
-  } catch (e) {
-    console.error(e);
-    errBox.textContent = '⚠ خطأ في معالجة الملفات: ' + e.message;
-    errBox.style.display = 'block';
-  }
-  btn.disabled = false; btn.innerHTML = 'معالجة وتحليل الداتا ربط كامل 🚀';
-}
-
-function renderDashboardTables() {
-    const pBody = document.getElementById('payrollTb'); pBody.innerHTML = "";
-    DATA.forEach(emp => {
-        let net = emp.basic + (emp.totalOT * 0.5) - (emp.totalDelay * 0.2) + (emp.sec02 * 0.1) - (emp.docErrors * 10);
-        pBody.innerHTML += `<tr>
-            <td class="td-name"><b>${emp.name}</b></td><td>${emp.job}</td><td>${emp.branch}</td>
-            <td class="td-m">${fmt(emp.basic)}</td><td class="td-m">${emp.attendanceCount} أيام</td>
-            <td class="td-m td-neg">${Math.round(emp.totalDelay)} د</td><td class="td-m td-pos">${emp.totalOT} د</td>
-            <td class="td-m td-acc">${emp.sec02}</td><td class="td-m td-acc" style="font-weight:700">${fmt(net)}</td>
-        </tr>`;
-    });
-
-    const sBody = document.getElementById('sessionsTb'); sBody.innerHTML = "";
-    DATA.forEach(emp => {
-        if (emp.prod.total_sessions === 0 && emp.prod.kashf_pt === 0) return;
-        sBody.innerHTML += `<tr>
-            <td class="td-name"><b>${emp.name}</b></td><td class="td-m">${emp.prod.kashf_pt}</td>
-            <td class="td-m">${emp.prod.pt_session}</td><td class="td-m">${emp.prod.kashf_nut}</td>
-            <td class="td-m">${emp.prod.follow_nut}</td><td class="td-m">${emp.prod.weight_loss}</td>
-            <td class="td-m">${emp.prod.hegama}</td><td class="td-m">${emp.prod.recovery}</td>
-            <td class="td-m">${emp.prod.tecar}</td><td class="td-m td-neg" style="font-weight:bold">${emp.docErrors}</td><td class="td-m td-acc" style="font-weight:bold">${emp.prod.total_sessions}</td>
-        </tr>`;
-    });
-
-    const anBody = document.getElementById('analyzerTb'); anBody.innerHTML = "";
-    DATA.forEach(emp => {
-        if (emp.opsCount === 0 && emp.encCount === 0) return;
-        let pct = emp.opsCount > 0 ? Math.round((emp.encCount / emp.opsCount) * 100) : 0;
-        let barHtml = emp.opsCount > 0 ? `<div class="progress-container"><div class="progress-bar" style="width: ${Math.min(pct, 100)}%;"></div></div>` : '';
-        anBody.innerHTML += `<tr>
-            <td class="td-name"><b>${emp.name}</b></td><td class="td-m">${emp.opsCount}</td>
-            <td class="td-m">${emp.encCount}</td><td class="td-m">${emp.opsCount - emp.encCount}</td>
-            <td>${barHtml} <b class="td-acc">${pct}%</b></td>
-        </tr>`;
-    });
-
-    const aBody = document.getElementById('attTb'); aBody.innerHTML = "";
-    absenceAnalysis.forEach(row => {
-        let bClass = row.status.includes('متطابق') ? 'badge-match' : (row.status.includes('ملفك') ? 'td-neg' : 'td-acc');
-        aBody.innerHTML += `<tr>
-            <td class="td-name"><b>${row.name}</b></td><td class="td-m">${row.yourCount}</td>
-            <td class="td-m">${row.rptCount}</td><td class="td-m">${row.diff}</td>
-            <td><span class="${bClass}" style="font-weight:bold">${row.status}</span></td><td><small>${row.note}</small></td>
-        </tr>`;
-    });
-}
-
-function switchTab(evt, tabId) {
-    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
-    document.getElementById(tabId).classList.add('active');
-    evt.currentTarget.classList.add('active');
-}
-
-function goto(name, btn) {
-    document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));
-    if (btn) btn.classList.add('on');
-    else {
-        const idx = name === 'overview' ? 0 : (name === 'employees' ? 1 : (name === 'sessions' ? 2 : (name === 'analyzer' ? 3 : 4)));
-        const targetNi = document.querySelectorAll('.ni')[idx];
-        if(targetNi) targetNi.classList.add('on');
-    }
-    document.querySelectorAll('.pg').forEach(p => p.classList.remove('on'));
-    const targetPage = document.getElementById('pg-' + name);
-    if (targetPage) targetPage.classList.add('on');
-}
-
-function exportExcel() {
-    if (DATA.length === 0) return;
-    const wb = XLSX.utils.book_new();
-
-    let sheet1Data = [["الاسم", "الوظيفة", "الفرع", "الراتب الأساسي", "أيام الحضور الفعلي", "إجمالي التأخير (د)", "الأوفر تايم (د)", "Sec02 السكرتارية للفرع", "أخطاء الكومبليت", "صافي المرتب المستحق"]];
-    DATA.forEach(e => sheet1Data.push([e.name, e.job, e.branch, e.basic, e.attendanceCount, Math.round(e.totalDelay), e.totalOT, e.sec02, e.docErrors, Math.round(e.basic + (e.totalOT*0.5) - (e.totalDelay*0.2) + (e.sec02*0.1) - (e.docErrors*10))]));
-
-    let sheet2Data = [["اسم الدكتور", "المطلوب (Operations)", "المنجز (Encounters)", "الفارق (المتبقي)", "نسبة الإنجاز الكلية"]];
-    DATA.forEach(e => { if(e.opsCount > 0 || e.encCount > 0) sheet2Data.push([e.name, e.opsCount, e.encCount, e.opsCount - e.encCount, e.opsCount > 0 ? `${Math.round((e.encCount / e.opsCount) * 100)}%` : '0%']); });
-
-    let sheet3Data = [["الموظف", "UT ملف الموظفين اليدوي", "غيابات البصمة المكتشفة", "الفارق الكلي", "حالة التطابق", "ملاحظة تدقيق النظام"]];
-    absenceAnalysis.forEach(r => sheet3Data.push([r.name, r.yourCount, r.rptCount, r.diff, r.status, r.note]));
-
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheet1Data), "كشف الرواتب والماليات الحية");
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheet2Data), "كفاءة ونسب إنجاز العيادة");
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheet3Data), "تدقيق ومقارنة غيابات UT");
-
-    if(!wb.Workbook) wb.Workbook = {}; if(!wb.Workbook.Views) wb.Workbook.Views = [{}];
-    wb.Workbook.Views[0].RTL = true;
-
-    XLSX.writeFile(wb, "تقرير_BODYFIX_الشامل_المدمج.xlsx");
-}
-</script>
-</body>
-</html>
+            let isPtSession = typeStr.includes("جلسة ع
