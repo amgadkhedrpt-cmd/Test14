@@ -3,59 +3,172 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>BodyFix — Ultimate Payroll & Clinic Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<title>BodyFix — Payroll & Clinic Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
-:root{
-  --bg:#0E1117;--sf:#161B25;--sf2:#1E2535;--bd:#2A3347;
-  --acc:#3B82F6;--grn:#10B981;--amb:#F59E0B;--red:#EF4444;--pur:#8B5CF6;--teal:#34D399;
-  --tx:#E8EDF5;--tx2:#8899AA;--tx3:#4A5568;
-  --pt:#3B82F6;--as:#10B981;--sc:#F59E0B;--hk:#8B5CF6;--nu:#34D399;
-  --font:'IBM Plex Sans Arabic',sans-serif;--mono:'IBM Plex Mono',monospace;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--tx);direction:rtl}
-::-webkit-scrollbar{width:5px;height:5px}
-::-webkit-scrollbar-track{background:var(--sf)}
-::-webkit-scrollbar-thumb{background:var(--bd);border-radius:4px}
+  :root {
+    --bg: #0E1117; --card: #161B25; --border: #2A3347;
+    --acc: #3B82F6; --grn: #10B981; --red: #EF4444; --tx: #E8EDF5; --tx2: #8899AA;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'IBM Plex Sans Arabic', sans-serif; background: var(--bg); color: var(--tx); direction: rtl; padding: 15px; }
+  
+  .container { max-width: 1200px; margin: 0 auto; }
+  .header { padding: 15px 0; border-bottom: 1px solid var(--border); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+  .logo { font-size: 24px; font-weight: 800; color: #ec4899; }
+  .logo span { color: #00b4d8; }
+  .title-sub { font-size: 12px; color: var(--tx2); }
+  
+  .upload-section { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+  .upload-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px; }
+  
+  .file-box { background: var(--bg); border: 2px dashed var(--border); border-radius: 8px; padding: 15px; text-align: center; position: relative; }
+  .file-box input[type="file"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+  .file-box h4 { font-size: 13px; color: #fff; margin-bottom: 5px; }
+  .file-box p { font-size: 11px; color: var(--tx2); }
+  .file-box.done { border-color: var(--grn); background: rgba(16, 185, 129, 0.03); }
+  
+  .run-btn { width: 100%; padding: 14px; background: var(--acc); color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+  .run-btn:disabled { background: var(--border); color: var(--tx2); cursor: not-allowed; }
+  
+  .err-box { background: rgba(239, 68, 68, 0.1); border-right: 4px solid var(--red); padding: 12px; border-radius: 6px; color: #FCA5A5; font-size: 13px; margin-top: 15px; display: none; }
+  .success-box { background: rgba(16, 185, 129, 0.1); border-right: 4px solid var(--grn); padding: 12px; border-radius: 6px; color: #A7F3D0; font-size: 13px; margin-top: 15px; display: none; }
+  
+  .tabs { display: flex; gap: 8px; margin: 20px 0 15px; border-bottom: 1px solid var(--border); padding-bottom: 8px; overflow-x: auto; }
+  .tab-btn { padding: 8px 16px; background: transparent; border: none; color: var(--tx2); font-weight: 600; font-size: 13px; cursor: pointer; white-space: nowrap; }
+  .tab-btn.active { background: var(--card); color: #fff; border-radius: 6px; border: 1px solid var(--border); }
+  
+  .tab-content { display: none; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 25px; }
+  .tab-content.active { display: block; }
+  
+  .table-wrapper { width: 100%; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; text-align: right; font-size: 13px; }
+  th { padding: 12px; background: #0d131f; color: #fff; font-weight: 600; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 10px 12px; border-bottom: 1px solid rgba(42,51,71,0.5); white-space: nowrap; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  
+  .td-neg { color: var(--red); }.td-pos { color: var(--grn); }.td-acc { color: var(--acc); font-weight: bold; }
+  .xl-btn { background: var(--grn); color: #fff; padding: 8px 16px; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; display: none; }
+</style>
+</head>
+<body>
 
-/* Shell Structural Design */
-.shell{display:grid;grid-template-rows:52px 1fr;height:100vh;overflow:hidden}
-.topbar{background:var(--sf);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 20px;gap:14px;height:52px;flex-shrink:0}
-.logo{font-size:13px;font-weight:700;letter-spacing:.1em;color:var(--acc);text-transform:uppercase;font-family:var(--mono)}
-.logo span{color:var(--tx3)}
-.topbar-mid{font-size:11px;color:var(--tx3);font-family:var(--mono)}
-.topbar-right{margin-right:auto;display:flex;gap:8px;align-items:center}
-.tbtn{background:transparent;border:1px solid var(--bd);border-radius:7px;color:var(--tx2);font-family:var(--font);font-size:12px;padding:5px 13px;cursor:pointer;transition:.15s}
-.tbtn:hover{border-color:var(--acc);color:var(--acc)}
-.tbtn.primary{background:var(--acc);border-color:var(--acc);color:#fff}
-.tbtn.primary:hover{background:#2563EB}
+<div class="container">
+  <div class="header">
+    <div>
+      <div class="logo">BODY<span>FIX</span></div>
+      <div class="title-sub" id="periodLbl">لوحة التحكم والربط الشامل للأتمتة الإدارية</div>
+    </div>
+    <button class="xl-btn" id="exportBtn" onclick="exportExcel()">⬇ تحميل تقرير إكسل النهائي</button>
+  </div>
 
-.main{display:grid;grid-template-columns:260px 1fr;overflow:hidden}
+  <div class="upload-section">
+    <div class="upload-grid">
+      <div class="file-box" id="box-emp">
+        <h4>1. كشف الموظفين والرواتب *</h4>
+        <p id="lbl-emp">اضغط للاختيار (يحتوي علي UT)</p>
+        <input type="file" accept=".xlsx,.xls" onchange="fileSelected(this, 'emp')">
+      </div>
+      <div class="file-box" id="box-att">
+        <h4>2. ملف البصمة الخام *</h4>
+        <p id="lbl-att">سجل الحضور والانصراف</p>
+        <input type="file" accept=".xlsx,.xls" onchange="fileSelected(this, 'att')">
+      </div>
+      <div class="file-box" id="box-appts">
+        <h4>3. ملف المواعيد *</h4>
+        <p id="lbl-appts">Appointments (يدعم كذا ملف)</p>
+        <input type="file" accept=".xlsx,.xls" multiple onchange="fileSelected(this, 'appts')">
+      </div>
+      <div class="file-box" id="box-ops">
+        <h4>4. ملف العمليات *</h4>
+        <p id="lbl-ops">Ops Steps (يدعم كذا ملف)</p>
+        <input type="file" accept=".xlsx,.xls" multiple onchange="fileSelected(this, 'ops')">
+      </div>
+      <div class="file-box" id="box-enc">
+        <h4>5. ملف المنجز الفعلي *</h4>
+        <p id="lbl-enc">Encounters المحققة</p>
+        <input type="file" accept=".xlsx,.xls" onchange="fileSelected(this, 'enc')">
+      </div>
+      <div class="file-box" id="box-doc">
+        <h4>6. أخطاء الكومبليت</h4>
+        <p id="lbl-doc">اختياري (تقرير النواقص)</p>
+        <input type="file" accept=".xlsx,.xls" onchange="fileSelected(this, 'doc')">
+      </div>
+    </div>
 
-/* Sidebar Navigation and Control */
-.sidebar{background:var(--sf);border-left:1px solid var(--bd);overflow-y:auto;display:flex;flex-direction:column}
-.sb-sec{padding:16px;border-bottom:1px solid var(--bd)}
-.sb-lbl{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);font-family:var(--mono);margin-bottom:10px}
+    <button class="run-btn" id="runBtn" onclick="runProcess()" disabled>معالجة وتحليل الداتا ربط كامل 🚀</button>
+    <div class="err-box" id="errBox"></div>
+    <div class="success-box" id="successBox"></div>
+  </div>
 
-/* Container for Upload Zones */
-.upload-grid { display: flex; flex-direction: column; gap: 4px; }
+  <div id="resultView" style="display:none;">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(event, 'view-payroll')">💰 كشف الرواتب والماليات</button>
+      <button class="tab-btn" onclick="switchTab(event, 'view-sessions')">📊 تفاصيل إنتاجية الأطباء</button>
+      <button class="tab-btn" onclick="switchTab(event, 'view-analyzer')">🎯 نسبة الإنجاز (Ops vs Enc)</button>
+      <button class="tab-btn" onclick="switchTab(event, 'view-attendance')">🔍 تدقيق غيابات الـ UT</button>
+    </div>
 
-.uz{border:1px dashed var(--bd);border-radius:9px;padding:11px 10px;cursor:pointer;transition:.18s;text-align:center;position:relative;margin-bottom:7px;background:transparent}
-.uz:hover{border-color:var(--acc);background:rgba(59,130,246,.04)}
-.uz.done{border-color:var(--grn);border-style:solid;background:rgba(16,185,129,.04)}
-.uz input{cursor:pointer}
-.uz-icon{font-size:16px;margin-bottom:2px}
-.uz-name{font-size:11px;font-weight:500;color:var(--tx2)}
-.uz.done .uz-name{color:var(--grn)}
-.uz-file{font-size:10px;color:var(--tx3);font-family:var(--mono);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    <div class="tab-content active" id="view-payroll">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr><th>الاسم</th><th>الوظيفة</th><th>الفرع</th><th>الأساسي</th><th>الحضور</th><th>التأخير (د)</th><th>الأوفر تايم (د)</th><th>Sec02 الفرع</th><th>صافي المستحق</th></tr>
+          </thead>
+          <tbody id="tbl-payroll"></tbody>
+        </table>
+      </div>
+    </div>
 
-.run-btn{width:100%;padding:10px;border-radius:9px;border:none;background:var(--acc);color:#fff;font-family:var(--font);font-weight:600;font-size:13px;cursor:pointer;transition:.18s;display:flex;align-items:center;justify-content:center;gap:7px;margin-top:4px}
-.run-btn:hover:not(:disabled){background:#2563EB}
-.run-btn:disabled{background:var(--bd);color:var(--tx3);cursor:not-allowed}
-.err{background:rgba(239, 68, 68, 0.12);border:1px solid rgba(239,68,68,.25);border-radius:7px;padding:12px;font-size:12px;color:#FCA5A5;line-height:1.6;margin-top:8px;white-space:pre-line}
+    <div class="tab-content" id="view-sessions">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr><th>اسم الدكتور</th><th>كشف ع ط</th><th>جلسة ع ط</th><th>كشف تغذية</th><th>متابعة تغذية</th><th>جلسات تخسيس</th><th>حجامة</th><th>ريكفري</th><th>تيكار</th><th>أخطاء كومبليت</th><th>إجمالي المستحق</th></tr>
+          </thead>
+          <tbody id="tbl-sessions"></tbody>
+        </table>
+      </div>
+    </div>
 
-.nav{display:flex;flex-direction:column}
-.ni{display:flex;align-items:center;gap:9px;padding:9px 16px;cursor:pointer;transition:.12s
+    <div class="tab-content" id="view-analyzer">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr><th>اسم الدكتور</th><th>المطلوب (Operations)</th><th>المنجز (Encounters)</th><th>المتبقي (الفارق)</th><th>نسبة الإنجاز الكلية</th></tr>
+          </thead>
+          <tbody id="tbl-analyzer"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tab-content" id="view-attendance">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr><th>الموظف</th><th>UT ملفك اليدوي</th><th>غيابات البصمة</th><th>الفارق</th><th>حالة التطابق</th><th>ملاحظة نظام التدقيق</th></tr>
+          </thead>
+          <tbody id="tbl-attendance"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const NO_OVERTIME_ROLES = ["physical therapist", "physical therapy", "physiotherapist", "pt", "طبيبة علاج طبيعي", "دكتور علاج طبيعي"];
+const TARGET_SERVICES = ["جلسة علاج طبيعي", "ج ع ط 2", "ج ع ط 5", "ج ع ط 8", "ج ع ط 11"];
+const SLIMMING_TYPES = ["cavitation", "rf", "cryo", "cryo air", "cryoblade", "excilis", "skin care"];
+
+const FIXED_SCHEDULES = [
+    { keys: ["ahmed ashraf", "أحمد أشرف"], time: "13:00", hours: 8 },
+    { keys: ["georgina", "جورجينا"], time: "13:00", hours: 8 },
+    { keys: ["abeer osman", "abeer", "عبير"], time: "14:00", hours: 7 },
+    { keys: ["ibrahim mohamad", "ibrahim", "إبراهيم"], time: "14:00", hours: 8 },
+    { keys: ["mohamed reda", "mohammad reda", "محمد رضا"], time: "14:00", hours: 8 },
+    { keys: ["ahmad ibrahim", "أحمد إبراهيم"], time: "14:00", hours: 8 },
+    { keys: ["sherouk", "shorouk", "شروق"], time: "14:00", hours: 8 },
+    { keys: ["malak ashour", "ملاك عاشور"], time: "14:00", hours: 8 },
+    { keys: ["dalia", "داليا"], time: "14:00", hours: 8 }
+];
