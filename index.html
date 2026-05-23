@@ -367,4 +367,174 @@ async function runProcess() {
 
     // 4. معالجة حركات البصمة والحضور الفعلي
     let atKeys = Object.keys(attnRows[0] || {});
-    let uKey = atKeys.find(k => k
+    let uKey = atKeys.find(k => k.includes('الاسم') || k.toLowerCase().includes('user')) || atKeys[0];
+    let cKey = atKeys.find(k => k.includes('حضور') || k.toLowerCase().includes('created')) || atKeys[1];
+    let oKey = atKeys.find(k => k.includes('انصراف') || k.toLowerCase().includes('updated')) || atKeys[2];
+
+    let employeeDatesMap = {}, allUniqueDates = new Set();
+    refNames.forEach(n => employeeDatesMap[n] = new Set());
+
+    attnRows.forEach(row => {
+        let matchedName = matchName(row[uKey], refNames);
+        if (!staffMetadata[matchedName]) return;
+
+        let checkinDt = row[cKey];
+        let checkoutDt = row[oKey];
+
+        if (!(checkinDt instanceof Date) && checkinDt) checkinDt = new Date(checkinDt);
+        if (!(checkoutDt instanceof Date) && checkoutDt) checkoutDt = new Date(checkoutDt);
+
+        if (!checkinDt || isNaN(checkinDt.getTime())) return;
+
+        let dateString = checkinDt.getFullYear() + '-' + String(checkinDt.getMonth() + 1).padStart(2, '0') + '-' + String(checkinDt.getDate()).padStart(2, '0');
+        allUniqueDates.add(dateString);
+        employeeDatesMap[matchedName].add(dateString);
+
+        staffMetadata[matchedName].attendanceCount = employeeDatesMap[matchedName].size;
+
+        let checkinTimeVal = checkinDt.getHours() * 60 + checkinDt.getMinutes();
+        let officialHour = 14, reqHours = 8;
+        
+        let currentJob = (staffMetadata[matchedName].job || "").toString().toLowerCase();
+        let calcOt = !NO_OVERTIME_ROLES.some(r => currentJob.includes(r));
+
+        let fixedSched = FIXED_SCHEDULES.find(fs => fs.keys.some(k => matchedName.toLowerCase().includes(k)));
+        if (fixedSched) {
+            officialHour = parseInt(fixedSched.time.split(':')[0]); reqHours = fixedSched.hours;
+        } else if (currentJob.includes("secretary") || currentJob.includes("سكرتير")) {
+            officialHour = Math.abs(checkinTimeVal - (11 * 60)) < Math.abs(checkinTimeVal - (15 * 60)) ? 11 : 15;
+            reqHours = 8;
+        }
+
+        if (checkinTimeVal > (officialHour * 60)) staffMetadata[matchedName].totalDelay += (checkinTimeVal - (officialHour * 60));
+        if (calcOt && checkoutDt && !isNaN(checkoutDt.getTime())) {
+            let actH = (checkoutDt.getTime() - checkinDt.getTime()) / (1000 * 60 * 60);
+            if (actH > reqHours) staffMetadata[matchedName].totalOT += Math.round((actH - reqHours) * 60);
+        }
+    });
+
+    // 5. تدقيق ومقارنة الغيابات
+    absenceAnalysis = [];
+    let totalExpectedDays = Array.from(allUniqueDates).filter(d => new Date(d).getDay() !== 5).length;
+
+    refNames.forEach(name => {
+        let emp = staffMetadata[name];
+        let compAbs = Math.max(0, totalExpectedDays - employeeDatesMap[name].size);
+        let diff = emp.utDays - compAbs;
+        let status = diff === 0 ? "✅ متطابق" : (diff > 0 ? "🔴 ملفك أكثر" : "🟡 التقرير أكثر");
+        absenceAnalysis.push({
+            name, yourCount: emp.utDays, rptCount: compAbs, diff, status,
+            note: diff > 0 ? `سجلت ${emp.utDays} يدوياً والسيستم لقط ${compAbs}` : (diff < 0 ? `السيستم لقط ${compAbs} وأنت سجلت ${emp.utDays}` : "تطابق كامل")
+        });
+    });
+
+    DATA = refNames.map(n => ({ name: n, ...staffMetadata[n] }));
+    
+    // بناء وعرض الجداول على لوحة التحكم فورا
+    renderDashboardTables();
+
+    document.getElementById('emptyMsg').style.display = 'none';
+    document.getElementById('periodLbl').textContent = `الربط الشامل جاهز — ${DATA.length} موظف`;
+    document.getElementById('resultView').style.display = "block";
+    document.getElementById('exportArea').style.display = "block";
+
+  } catch (e) {
+    console.error(e);
+    errBox.textContent = '⚠ خطأ في معالجة الملفات: ' + e.message;
+    errBox.style.display = 'block';
+  }
+  btn.disabled = false; btn.innerHTML = 'معالجة وتحليل الداتا ربط كامل 🚀';
+}
+
+function renderDashboardTables() {
+    const pBody = document.getElementById('payrollTb'); pBody.innerHTML = "";
+    DATA.forEach(emp => {
+        let net = emp.basic + (emp.totalOT * 0.5) - (emp.totalDelay * 0.2) + (emp.sec02 * 0.1) - (emp.docErrors * 10);
+        pBody.innerHTML += `<tr>
+            <td class="td-name"><b>${emp.name}</b></td><td>${emp.job}</td><td>${emp.branch}</td>
+            <td class="td-m">${fmt(emp.basic)}</td><td class="td-m">${emp.attendanceCount} أيام</td>
+            <td class="td-m td-neg">${Math.round(emp.totalDelay)} د</td><td class="td-m td-pos">${emp.totalOT} د</td>
+            <td class="td-m td-acc">${emp.sec02}</td><td class="td-m td-acc" style="font-weight:700">${fmt(net)}</td>
+        </tr>`;
+    });
+
+    const sBody = document.getElementById('sessionsTb'); sBody.innerHTML = "";
+    DATA.forEach(emp => {
+        if (emp.prod.total_sessions === 0 && emp.prod.kashf_pt === 0) return;
+        sBody.innerHTML += `<tr>
+            <td class="td-name"><b>${emp.name}</b></td><td class="td-m">${emp.prod.kashf_pt}</td>
+            <td class="td-m">${emp.prod.pt_session}</td><td class="td-m">${emp.prod.kashf_nut}</td>
+            <td class="td-m">${emp.prod.follow_nut}</td><td class="td-m">${emp.prod.weight_loss}</td>
+            <td class="td-m">${emp.prod.hegama}</td><td class="td-m">${emp.prod.recovery}</td>
+            <td class="td-m">${emp.prod.tecar}</td><td class="td-m td-neg" style="font-weight:bold">${emp.docErrors}</td><td class="td-m td-acc" style="font-weight:bold">${emp.prod.total_sessions}</td>
+        </tr>`;
+    });
+
+    const anBody = document.getElementById('analyzerTb'); anBody.innerHTML = "";
+    DATA.forEach(emp => {
+        if (emp.opsCount === 0 && emp.encCount === 0) return;
+        let pct = emp.opsCount > 0 ? Math.round((emp.encCount / emp.opsCount) * 100) : 0;
+        let barHtml = emp.opsCount > 0 ? `<div class="progress-container"><div class="progress-bar" style="width: ${Math.min(pct, 100)}%;"></div></div>` : '';
+        anBody.innerHTML += `<tr>
+            <td class="td-name"><b>${emp.name}</b></td><td class="td-m">${emp.opsCount}</td>
+            <td class="td-m">${emp.encCount}</td><td class="td-m">${emp.opsCount - emp.encCount}</td>
+            <td>${barHtml} <b class="td-acc">${pct}%</b></td>
+        </tr>`;
+    });
+
+    const aBody = document.getElementById('attTb'); aBody.innerHTML = "";
+    absenceAnalysis.forEach(row => {
+        let bClass = row.status.includes('متطابق') ? 'badge-match' : (row.status.includes('ملفك') ? 'td-neg' : 'td-acc');
+        aBody.innerHTML += `<tr>
+            <td class="td-name"><b>${row.name}</b></td><td class="td-m">${row.yourCount}</td>
+            <td class="td-m">${row.rptCount}</td><td class="td-m">${row.diff}</td>
+            <td><span class="${bClass}" style="font-weight:bold">${row.status}</span></td><td><small>${row.note}</small></td>
+        </tr>`;
+    });
+}
+
+function switchTab(evt, tabId) {
+    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    evt.currentTarget.classList.add('active');
+}
+
+function goto(name, btn) {
+    document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));
+    if (btn) btn.classList.add('on');
+    else {
+        const idx = name === 'overview' ? 0 : (name === 'employees' ? 1 : (name === 'sessions' ? 2 : (name === 'analyzer' ? 3 : 4)));
+        const targetNi = document.querySelectorAll('.ni')[idx];
+        if(targetNi) targetNi.classList.add('on');
+    }
+    document.querySelectorAll('.pg').forEach(p => p.classList.remove('on'));
+    const targetPage = document.getElementById('pg-' + name);
+    if (targetPage) targetPage.classList.add('on');
+}
+
+function exportExcel() {
+    if (DATA.length === 0) return;
+    const wb = XLSX.utils.book_new();
+
+    let sheet1Data = [["الاسم", "الوظيفة", "الفرع", "الراتب الأساسي", "أيام الحضور الفعلي", "إجمالي التأخير (د)", "الأوفر تايم (د)", "Sec02 السكرتارية للفرع", "أخطاء الكومبليت", "صافي المرتب المستحق"]];
+    DATA.forEach(e => sheet1Data.push([e.name, e.job, e.branch, e.basic, e.attendanceCount, Math.round(e.totalDelay), e.totalOT, e.sec02, e.docErrors, Math.round(e.basic + (e.totalOT*0.5) - (e.totalDelay*0.2) + (e.sec02*0.1) - (e.docErrors*10))]));
+
+    let sheet2Data = [["اسم الدكتور", "المطلوب (Operations)", "المنجز (Encounters)", "الفارق (المتبقي)", "نسبة الإنجاز الكلية"]];
+    DATA.forEach(e => { if(e.opsCount > 0 || e.encCount > 0) sheet2Data.push([e.name, e.opsCount, e.encCount, e.opsCount - e.encCount, e.opsCount > 0 ? `${Math.round((e.encCount / e.opsCount) * 100)}%` : '0%']); });
+
+    let sheet3Data = [["الموظف", "UT ملف الموظفين اليدوي", "غيابات البصمة المكتشفة", "الفارق الكلي", "حالة التطابق", "ملاحظة تدقيق النظام"]];
+    absenceAnalysis.forEach(r => sheet3Data.push([r.name, r.yourCount, r.rptCount, r.diff, r.status, r.note]));
+
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheet1Data), "كشف الرواتب والماليات الحية");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheet2Data), "كفاءة ونسب إنجاز العيادة");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheet3Data), "تدقيق ومقارنة غيابات UT");
+
+    if(!wb.Workbook) wb.Workbook = {}; if(!wb.Workbook.Views) wb.Workbook.Views = [{}];
+    wb.Workbook.Views[0].RTL = true;
+
+    XLSX.writeFile(wb, "تقرير_BODYFIX_الشامل_المدمج.xlsx");
+}
+</script>
+</body>
+</html>
