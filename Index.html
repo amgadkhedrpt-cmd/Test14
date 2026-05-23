@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>BodyFix — Ultimate Payroll & Clinic Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0E1117;--sf:#161B25;--sf2:#1E2535;--bd:#2A3347;
+  --acc:#3B82F6;--grn:#10B981;--amb:#F59E0B;--red:#EF4444;--pur:#8B5CF6;--teal:#34D399;
+  --tx:#E8EDF5;--tx2:#8899AA;--tx3:#4A5568;
+  --pt:#3B82F6;--as:#10B981;--sc:#F59E0B;--hk:#8B5CF6;--nu:#34D399;
+  --font:'IBM Plex Sans Arabic',sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--tx);direction:rtl}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--sf)}
+::-webkit-scrollbar-thumb{background:var(--bd);border-radius:4px}
+
+/* Shell Structural Design */
+.shell{display:grid;grid-template-rows:52px 1fr;height:100vh;overflow:hidden}
+.topbar{background:var(--sf);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 20px;gap:14px;height:52px;flex-shrink:0}
+.logo{font-size:13px;font-weight:700;letter-spacing:.1em;color:var(--acc);text-transform:uppercase;font-family:var(--mono)}
+.logo span{color:var(--tx3)}
+.topbar-mid{font-size:11px;color:var(--tx3);font-family:var(--mono)}
+.topbar-right{margin-right:auto;display:flex;gap:8px;align-items:center}
+.tbtn{background:transparent;border:1px solid var(--bd);border-radius:7px;color:var(--tx2);font-family:var(--font);font-size:12px;padding:5px 13px;cursor:pointer;transition:.15s}
+.tbtn:hover{border-color:var(--acc);color:var(--acc)}
+.tbtn.primary{background:var(--acc);border-color:var(--acc);color:#fff}
+.tbtn.primary:hover{background:#2563EB}
+
+.main{display:grid;grid-template-columns:260px 1fr;overflow:hidden}
+
+/* Sidebar Navigation and Control */
+.sidebar{background:var(--sf);border-left:1px solid var(--bd);overflow-y:auto;display:flex;flex-direction:column}
+.sb-sec{padding:16px;border-bottom:1px solid var(--bd)}
+.sb-lbl{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);font-family:var(--mono);margin-bottom:10px}
+
+/* Container for Upload Zones */
+.upload-grid { display: flex; flex-direction: column; gap: 4px; }
+
+.uz{border:1px dashed var(--bd);border-radius:9px;padding:11px 10px;cursor:pointer;transition:.18s;text-align:center;position:relative;margin-bottom:7px;background:transparent}
+.uz:hover{border-color:var(--acc);background:rgba(59,130,246,.04)}
+.uz.done{border-color:var(--grn);border-style:solid;background:rgba(16,185,129,.04)}
+.uz input{cursor:pointer}
+.uz-icon{font-size:16px;margin-bottom:2px}
+.uz-name{font-size:11px;font-weight:500;color:var(--tx2)}
+.uz.done .uz-name{color:var(--grn)}
+.uz-file{font-size:10px;color:var(--tx3);font-family:var(--mono);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.run-btn{width:100%;padding:10px;border-radius:9px;border:none;background:var(--acc);color:#fff;font-family:var(--font);font-weight:600;font-size:13px;cursor:pointer;transition:.18s;display:flex;align-items:center;justify-content:center;gap:7px;margin-top:4px}
+.run-btn:hover:not(:disabled){background:#2563EB}
+.run-btn:disabled{background:var(--bd);color:var(--tx3);cursor:not-allowed}
+.err{background:rgba(239, 68, 68, 0.12);border:1px solid rgba(239,68,68,.25);border-radius:7px;padding:12px;font-size:12px;color:#FCA5A5;line-height:1.6;margin-top:8px;white-space:pre-line}
+
+.nav{display:flex;flex-direction:column}
+.ni{display:flex;align-items:center;gap:9px;padding:9px 16px;cursor:pointer;transition:.12s
